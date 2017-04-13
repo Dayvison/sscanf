@@ -109,24 +109,27 @@ AMX *
 // Macros for the regular values.
 #define DO(m,n)                  \
 	{m b;                        \
+	++paramNum;                  \
 	if (Do##n(&string, &b)) {    \
 		SAVE_VALUE((cell)b);     \
 		break; }                 \
 	RestoreOpts(defaultOpts);      \
-	return SSCANF_FAIL_RETURN; }
+	return paramNum; }
 
 #define DOV(m,n)                 \
 	{m b;                        \
+	++paramNum;                  \
 	Do##n(&string, &b);          \
 	SAVE_VALUE((cell)b); }
 
 #define DOF(m,n)                 \
 	{m b;                        \
+	++paramNum;                  \
 	if (Do##n(&string, &b)) {    \
 		SAVE_VALUE_F(b)          \
 		break; }                 \
 	RestoreOpts(defaultOpts);      \
-	return SSCANF_FAIL_RETURN; }
+	return paramNum; }
 
 // Macros for the default values.  None of these have ifs as the return value
 // of GetReturnDefault is always true - we don't penalise users for the
@@ -141,6 +144,7 @@ AMX *
 
 #define DEF(m,n)                 \
 	{m b;                        \
+	++paramNum;                  \
 	Do##n##D(&format, &b);       \
 	SAVE_VALUE_F(b)              \
 	break; }
@@ -242,6 +246,8 @@ static cell AMX_NATIVE_CALL
 	// Current parameter to save data to.
 	int
 		paramPos = 3;
+	int
+		paramNum = -1;
 	cell *
 		cptr;
 	InitialiseDelimiter();
@@ -291,6 +297,9 @@ static cell AMX_NATIVE_CALL
 		}
 		else
 		{
+			if(paramNum == -1)
+				paramNum = 0;
+
 			switch (*format++)
 			{
 				case 'L':
@@ -1185,7 +1194,12 @@ static cell AMX_NATIVE_CALL
 					// things, and the more important thing is that the user
 					// didn't enter the correct data.
 					RestoreOpts(defaultOpts);
-					return SSCANF_FAIL_RETURN;
+					// TODO: checar se nenum foi enviado
+					if(paramNum == -1)
+						return SSCANF_FAIL_RETURN;
+					else
+						++paramNum;
+					return paramNum;
 				case '?':
 					GetMultiType(&format);
 					continue;
